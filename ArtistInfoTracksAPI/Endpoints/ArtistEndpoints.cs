@@ -1,0 +1,117 @@
+﻿using ArtistInfoTracksAPI.Data;
+using ArtistInfoTracksAPI.ExtensionMapper;
+using ArtistInfoTracksAPI.Models;
+using ArtistInfoTracksAPI.Models.ArtistsModel;
+using ArtistInfoTracksAPI.Models.DTO;
+using ArtistInfoTracksAPI.Repository.Interfaces;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using System.Net;
+using System.Runtime.CompilerServices;
+
+namespace ArtistInfoTracksAPI.Endpoints
+{
+    public static class ArtistEndpoints
+    {
+        public static void ConfigureArtistsEndpoints(this WebApplication app)
+        {
+            app.MapGet("api/artist", GetAllArtists).WithName("GetArtists").Produces<APIResponse>(200);
+            app.MapPost("api/artist",CreateArtist).WithName("CreateArtist").Produces(400).Produces<APIResponse>(200);
+            app.MapGet("api/artist/{id}", GetArtist).WithName("GetAsync").Produces(400).Produces<APIResponse>(200);
+            app.MapDelete("api/artist", RemoveAsync).WithName("Remove").Produces(400).Produces<APIResponse>(200);
+        }
+
+        private async static Task<IResult> GetAllArtists(IArtistRepository _context)
+        {
+            var response = new APIResponse();
+
+            try
+            {
+                // Дожидаемся завершения асинхронной операции
+                var artists = await _context.GetAllAsync();
+                response.Result = artists; // Возвращаем результат, а не Task
+                response.isSuccess = true;
+                response.StatusCode = HttpStatusCode.OK;
+
+                return Results.Ok(response);
+            }
+            catch (Exception ex)
+            {
+                response.isSuccess = false;
+                response.StatusCode = HttpStatusCode.InternalServerError;
+                response.ErrorMessages.Add(ex.Message);
+                return Results.Problem(response.ErrorMessages.FirstOrDefault());
+            }
+        }
+
+        private async static Task<IResult> CreateArtist([FromBody] ArtistCreateDTO artistCreateDTO, IArtistRepository _context) 
+        {
+            var response = new APIResponse();
+
+            
+                if (artistCreateDTO != null)
+                {
+
+                    await _context.CreateAsync(artistCreateDTO);
+                    await _context.SaveAsync();
+
+                     response.Result = artistCreateDTO;
+                    response.isSuccess = true;
+                    response.StatusCode = HttpStatusCode.Created;
+
+                    return Results.Ok(response);
+                } else
+                {
+                    response.isSuccess = false;
+                    response.StatusCode = HttpStatusCode.BadRequest;
+                    return Results.BadRequest(response);
+                }
+        }
+        private async static Task<IResult> GetArtist(int id, IArtistRepository _context)
+        {
+            var response = new APIResponse();
+                var gotArtist = await _context.GetAsync(id);
+            if (gotArtist != null)
+            {
+                response.isSuccess = true;
+                response.StatusCode = HttpStatusCode.OK;
+                response.Result = await _context.GetAsync(id);
+
+
+                await _context.SaveAsync();
+                return Results.Ok(response);
+            }
+            else
+            {
+                response.isSuccess = false;
+                response.StatusCode = HttpStatusCode.BadRequest;
+
+                return Results.BadRequest(response);
+            }
+
+        }
+      
+        private async static Task<IResult> RemoveAsync(IArtistRepository _context, [FromBody] ArtistToDeleteDTO artistFromBody)
+        {
+            var response = new APIResponse() { 
+                isSuccess = false,
+                Result = "not found",
+                StatusCode = HttpStatusCode.NotFound};
+            var artist = artistFromBody.toEntity();
+            var artistTo = await _context.GetAsync(artist.Id);
+            if (artistTo != null)
+            {
+                await _context.RemoveAsync(artistTo);
+                await _context.SaveAsync();
+                return Results.Ok(response);
+            } else
+            {
+                response.StatusCode = HttpStatusCode.OK;
+                response.Result = "deleted";
+                response.isSuccess = true;
+                return Results.Ok(response);
+            }
+        }
+
+    }
+}

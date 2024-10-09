@@ -1,0 +1,6 @@
+@ArtistInfoTracksAPI_HostAddress = http://localhost:5264
+
+GET {{ArtistInfoTracksAPI_HostAddress}}/artist/
+Accept: application/json
+
+###
