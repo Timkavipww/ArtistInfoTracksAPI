@@ -14,7 +14,7 @@ namespace ArtistInfoTracksAPI.ExtensionMapper
             var artistDTO = new ArtistDTO()
             {
                 Id = artist.Id,
-                Name = artist.Name
+                Name = artist.Name,
             };
             return artistDTO;
         }
@@ -23,7 +23,8 @@ namespace ArtistInfoTracksAPI.ExtensionMapper
             var artist = new Artist()
             {
                 Name = artistDTO.Name,
-                Id = artistDTO.Id
+                Id = artistDTO.Id,
+
             };
             return artist;
         }

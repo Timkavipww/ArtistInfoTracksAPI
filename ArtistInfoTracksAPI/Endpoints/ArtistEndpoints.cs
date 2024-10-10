@@ -49,7 +49,13 @@ namespace ArtistInfoTracksAPI.Endpoints
         {
             var response = new APIResponse() { };
 
-
+            var artists = await _context.GetAllAsync();
+            var artistWithSameName = artists.FirstOrDefault(u => u.Name == artistCreateDTO.Name);
+            if (artistWithSameName != null)
+            {
+                response.Result = $"{artistWithSameName.Name} already exists";
+                return Results.BadRequest(response);
+            }
             if (artistCreateDTO != null)
             {
 
@@ -104,25 +110,23 @@ namespace ArtistInfoTracksAPI.Endpoints
 
         }
 
-        private async static Task<IResult> RemoveAsyncArtist(IArtistRepository _context, [FromBody] ArtistToDeleteDTO artistFromBody)
+        private async static Task<IResult> RemoveAsyncArtist(IArtistRepository _context, int id)
         {
-            var response = new APIResponse() {
-                isSuccess = false,
-                Result = "not found",
-                StatusCode = HttpStatusCode.NotFound };
-            var artist = artistFromBody.toEntity();
-            var artistTo = await _context.GetAsync(artist.Id);
-            if (artistTo != null)
+            var response = new APIResponse();
+                
+            var artist = await _context.GetAsync(id);
+            if (artist != null)
             {
-                await _context.RemoveAsync(artistTo);
+                await _context.RemoveAsync(artist);
                 await _context.SaveAsync();
+                response.Result = $"deleted {artist.Name}";
+                response.isSuccess = true;
+                response.StatusCode = HttpStatusCode.OK;
                 return Results.Ok(response);
             } else
             {
-                response.StatusCode = HttpStatusCode.OK;
-                response.Result = "deleted";
-                response.isSuccess = true;
-                return Results.Ok(response);
+                response.StatusCode = HttpStatusCode.NotFound;
+                return Results.BadRequest(response);
             }
         }
 
