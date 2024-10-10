@@ -10,23 +10,23 @@ namespace ArtistInfoTracksAPI.Data
         {
         }
         public DbSet<Artist> Artists { get; set; }
+        public DbSet<Track> Tracks { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            base.OnModelCreating(modelBuilder);
+
             modelBuilder.Entity<Artist>()
                 .HasKey(key => key.Id);
             modelBuilder.Entity<Track>()
-                .HasKey(key => key.ArtistId);
-
-            
+                .HasKey(key => key.Id);
 
             modelBuilder.Entity<Artist>()
-                .HasMany(a => a.Tracks)
-                .WithOne(t => t.Artist)
-                .HasForeignKey(t => t.ArtistId);
+            .HasMany(a => a.Tracks)
+            .WithOne(t => t.Artist)
+            .HasForeignKey(t => t.ArtistId);
 
 
-            base.OnModelCreating(modelBuilder);
         }
     }
 }

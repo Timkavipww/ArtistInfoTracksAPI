@@ -15,6 +15,13 @@ builder.Services.AddDbContext<ApplicationDbContext>(option =>
     option.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddScoped<IArtistRepository, ArtistRepository>();
 builder.Services.AddScoped<ITrackRepository, TrackRepository>();
+builder.Services.AddHttpClient();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
+        options.JsonSerializerOptions.MaxDepth = 64;
+    });
 
 
 var app = builder.Build();
@@ -27,6 +34,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.ConfigureArtistsEndpoints();
+app.ConfigureTrackEndpoints();
 
 //app.UseAuthorization();
 

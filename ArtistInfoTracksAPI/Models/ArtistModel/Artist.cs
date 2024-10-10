@@ -8,14 +8,8 @@ namespace ArtistInfoTracksAPI.Models.ArtistsModel
         public int Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
-        public List<Track> Tracks { get; set; }
 
-        public Artist() { }
-        public Artist(string name) 
-        {
-            Tracks = new List<Track>();
-        }
-   
+        public List<Track> Tracks { get; set; } = new List<Track>();
 
     }
 }

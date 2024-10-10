@@ -3,6 +3,7 @@ using ArtistInfoTracksAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ArtistInfoTracksAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241010165717_initnew1010")]
+    partial class initnew1010
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -67,18 +70,16 @@ namespace ArtistInfoTracksAPI.Migrations
 
                     b.HasIndex("ArtistId");
 
-                    b.ToTable("Tracks");
+                    b.ToTable("Track");
                 });
 
             modelBuilder.Entity("ArtistInfoTracksAPI.Models.TrackModel.Track", b =>
                 {
-                    b.HasOne("ArtistInfoTracksAPI.Models.ArtistsModel.Artist", "Artist")
+                    b.HasOne("ArtistInfoTracksAPI.Models.ArtistsModel.Artist", null)
                         .WithMany("Tracks")
                         .HasForeignKey("ArtistId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Artist");
                 });
 
             modelBuilder.Entity("ArtistInfoTracksAPI.Models.ArtistsModel.Artist", b =>
