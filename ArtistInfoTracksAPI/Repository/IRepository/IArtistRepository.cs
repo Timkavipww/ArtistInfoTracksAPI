@@ -12,7 +12,7 @@ namespace ArtistInfoTracksAPI.Repository.Interfaces
         Task CreateAsync(ArtistCreateDTO artistCreateDTO);
         //Task RemoveAsync(int id);
         Task RemoveAsync(Artist artist);
-        Task UpdateAsync(Artist artist);
+        Task UpdateAsync(ArtistToUpdateDTO artist);
         Task SaveAsync();
 
     }

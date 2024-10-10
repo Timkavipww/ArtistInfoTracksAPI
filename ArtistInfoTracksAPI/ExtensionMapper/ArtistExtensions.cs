@@ -2,6 +2,7 @@
 using ArtistInfoTracksAPI.Models.DTO;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Protocols;
 
 namespace ArtistInfoTracksAPI.ExtensionMapper
@@ -53,5 +54,26 @@ namespace ArtistInfoTracksAPI.ExtensionMapper
             };
             return artist;
         }
+        public static Artist updatedToEntity(this ArtistToUpdateDTO artistToUpdateDTO)
+        {
+            var artistToUpdate = new Artist()
+            {
+                
+                Name = artistToUpdateDTO.Name,
+                Description = artistToUpdateDTO.Description,
+
+            };
+            return artistToUpdate;
+        }
+        public static ArtistToUpdateDTO toUpdateDTO(this Artist artist)
+        {
+            var artistToUpdate = new ArtistToUpdateDTO()
+            {
+                Name = artist.Name,
+                Description = artist.Description,
+            };
+            return artistToUpdate;
+        }
+
     }
 }

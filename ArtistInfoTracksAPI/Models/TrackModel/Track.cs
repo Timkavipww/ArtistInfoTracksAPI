@@ -1,5 +1,6 @@
 ﻿
 using ArtistInfoTracksAPI.Models.ArtistsModel;
+using System.Data.SqlTypes;
 
 namespace ArtistInfoTracksAPI.Models.TrackModel
 {
@@ -12,9 +13,9 @@ namespace ArtistInfoTracksAPI.Models.TrackModel
         }
         public int ArtistId { get; set; }
         public Artist Artist { get; set; }
-        public string Name { get; set; }
-        public string Title { get; set; }
-        public string Lyrics { get; set; }
+        public string? Name { get; set; }
+        public string? Title { get; set; }
+        public string? Lyrics { get; set; }
 
     }
 }

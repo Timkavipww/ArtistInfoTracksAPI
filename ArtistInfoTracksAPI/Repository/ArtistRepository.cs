@@ -29,7 +29,6 @@ namespace ArtistInfoTracksAPI.Repository
 
                 await _context.AddAsync(artistEntity);
 
-                await _context.SaveChangesAsync();
             }
             catch (Exception ex)
             {
@@ -67,7 +66,7 @@ namespace ArtistInfoTracksAPI.Repository
                 if (artist != null)
                 {
 
-                    return await _context.Artists.FirstOrDefaultAsync(u => u.Id == artist.Id);
+                    return artist;
                     
                 } else
                 {
@@ -116,9 +115,20 @@ namespace ArtistInfoTracksAPI.Repository
             }
         }
 
-        public async Task UpdateAsync(Artist artist)
+        public async Task UpdateAsync(ArtistToUpdateDTO artist)
         {
-            throw new NotImplementedException();
+            if (artist != null)
+            {
+                try
+                {
+                    _context.Update(artist);
+                }
+                catch (DbException dbEx)
+                {
+                    Console.WriteLine($"{dbEx.Message}");
+                }
+            }
+
         }
     }
 }
