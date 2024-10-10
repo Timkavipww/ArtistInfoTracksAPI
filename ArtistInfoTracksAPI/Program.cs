@@ -2,6 +2,7 @@ using ArtistInfoTracksAPI.Data;
 using ArtistInfoTracksAPI.Endpoints;
 using ArtistInfoTracksAPI.Repository;
 using ArtistInfoTracksAPI.Repository.Interfaces;
+using ArtistInfoTracksAPI.Repository.IRepository;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,6 +14,8 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<ApplicationDbContext>(option =>
     option.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddScoped<IArtistRepository, ArtistRepository>();
+builder.Services.AddScoped<ITrackRepository, TrackRepository>();
+
 
 var app = builder.Build();
 

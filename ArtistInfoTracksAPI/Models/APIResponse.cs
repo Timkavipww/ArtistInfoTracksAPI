@@ -12,6 +12,8 @@ namespace ArtistInfoTracksAPI.Models
         public APIResponse() 
         {
             ErrorMessages = new List<string>();
+            StatusCode = HttpStatusCode.BadRequest;
+            isSuccess = false;
         }
     }
 }

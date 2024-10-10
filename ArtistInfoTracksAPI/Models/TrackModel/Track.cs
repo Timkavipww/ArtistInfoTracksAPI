@@ -1,10 +1,12 @@
 ﻿
 using ArtistInfoTracksAPI.Models.ArtistsModel;
+using System.Data.SqlTypes;
 
 namespace ArtistInfoTracksAPI.Models.TrackModel
 {
     public class Track
     {
+        public int Id { get; set; }
         public Track() { }
         public Track(Artist artist)
         {
