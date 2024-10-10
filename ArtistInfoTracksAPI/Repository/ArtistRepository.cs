@@ -88,7 +88,15 @@ namespace ArtistInfoTracksAPI.Repository
  
         public async Task<Artist> GetAsync(string name)
         {
-            throw new NotImplementedException();
+            var artist = await _context.Artists.FirstOrDefaultAsync(u => u.Name == name);
+            
+            if(artist != null)
+            {
+                return artist;
+            } else
+            {
+                return null;
+            }
         }
 
         public async Task RemoveAsync(Artist artist)

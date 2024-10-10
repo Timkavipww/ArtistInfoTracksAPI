@@ -1,6 +1,7 @@
 ﻿using ArtistInfoTracksAPI.Models.ArtistsModel;
 using ArtistInfoTracksAPI.Models.DTO;
 using ArtistInfoTracksAPI.Models.TrackModel;
+using ArtistInfoTracksAPI.Repository.IRepository;
 
 namespace ArtistInfoTracksAPI.Repository.Interfaces
 {

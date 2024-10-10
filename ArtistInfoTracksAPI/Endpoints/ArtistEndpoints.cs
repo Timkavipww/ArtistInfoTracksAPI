@@ -18,7 +18,8 @@ namespace ArtistInfoTracksAPI.Endpoints
         {
             app.MapGet("api/artist", GetAllArtists).WithName("GetArtists").Produces<APIResponse>(200);
             app.MapPost("api/artist", CreateArtist).WithName("CreateArtist").Produces(400).Produces<APIResponse>(200);
-            app.MapGet("api/artist/{id}", GetArtist).WithName("GetAsync").Produces(400).Produces<APIResponse>(200);
+            app.MapGet("api/artist/{id:int}", GetArtistById).WithName("GetAsyncById").Produces(400).Produces<APIResponse>(200);
+            app.MapGet("api/artist/name/{name}", GetArtistByName).WithName("GetAsyncByName").Produces(400).Produces<APIResponse>(200);
             app.MapDelete("api/artist", RemoveAsyncArtist).WithName("Remove").Produces(400).Produces<APIResponse>(200);
             app.MapPut("api/artist", UpdateArtist).WithName("UpdateArtist").Produces(400).Produces<APIResponse>(200);
         }
@@ -65,7 +66,7 @@ namespace ArtistInfoTracksAPI.Endpoints
                 return Results.BadRequest(response);
             }
         }
-        private async static Task<IResult> GetArtist(int id, IArtistRepository _context)
+        private async static Task<IResult> GetArtistById(int id, IArtistRepository _context)
         {
             var response = new APIResponse();
             var gotArtist = await _context.GetAsync(id);
@@ -73,19 +74,33 @@ namespace ArtistInfoTracksAPI.Endpoints
             {
                 response.isSuccess = true;
                 response.StatusCode = HttpStatusCode.OK;
-                response.Result = await _context.GetAsync(id);
+                response.Result = gotArtist;
 
 
-                await _context.SaveAsync();
                 return Results.Ok(response);
             }
             else
             {
-                response.isSuccess = false;
-                response.StatusCode = HttpStatusCode.BadRequest;
 
                 return Results.BadRequest(response);
             }
+
+        }
+        private async static Task<IResult> GetArtistByName(string name, IArtistRepository _context)
+        {
+            var response = new APIResponse();
+            var gotArtist = await _context.GetAsync(name);
+
+            if (gotArtist != null)
+            {
+                    response.isSuccess = true;
+                    response.StatusCode = HttpStatusCode.OK;
+                    response.Result = gotArtist;
+
+                    return Results.Ok(response);
+                
+            }
+            return Results.BadRequest(response);
 
         }
 
