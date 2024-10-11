@@ -16,7 +16,7 @@ namespace ArtistInfoTracksAPI.Models.TrackModel
         public int ArtistId { get; set; }
 
         [JsonIgnore]
-        public Artist Artist { get; set; }
+        public virtual Artist Artist { get; set; }
 
     }
 }

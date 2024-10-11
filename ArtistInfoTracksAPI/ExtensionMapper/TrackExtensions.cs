@@ -32,6 +32,11 @@ namespace ArtistInfoTracksAPI.ExtensionMapper
             var track = new Track()
             {
                 Name = trackToCreateDTO.Name,
+                Title = trackToCreateDTO.Title,
+                AlbumName = trackToCreateDTO.AlbumName,
+                Artist = trackToCreateDTO.Artist,
+                ArtistId = trackToCreateDTO.ArtistId,
+                Lyrics = trackToCreateDTO.Lyrics
             };
             return track;
         }

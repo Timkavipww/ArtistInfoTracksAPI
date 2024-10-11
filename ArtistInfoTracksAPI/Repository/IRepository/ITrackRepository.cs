@@ -11,15 +11,16 @@ namespace ArtistInfoTracksAPI.Repository.IRepository
     {
         Task<int> GetArtistId(Artist artist);
         Task<ICollection<Track>> GetAllAsync(int artistId);
+        Task<ICollection<Track>> GetAllAsync();
         Task<Track> GetAsync(int id);
         Task AddTrackToArtist(int artistId, TrackToCreateDTO trackToCreateDTO);
         Task<List<Track>> GetTracksByArtistId(int artistId);
   
         Task<Track> GetAsync(string name);
-        Task CreateAsync(TrackDTO artistCreateDTO);
+        Task CreateAsync(TrackToCreateDTO trackToCreateDTO);
 
         //Task RemoveAsync(int id);
-        Task RemoveAsync(Track track);
+        Task RemoveAsync(Artist artist, int id);
         Task UpdateAsync(TrackToUpdateDTO track);
         Task SaveAsync();
     }
