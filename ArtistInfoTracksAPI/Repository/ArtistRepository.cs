@@ -130,6 +130,7 @@ namespace ArtistInfoTracksAPI.Repository
                 try
                 {
                     _context.Update(artist);
+                    await _context.SaveChangesAsync();
                 }
                 catch (DbException dbEx)
                 {
