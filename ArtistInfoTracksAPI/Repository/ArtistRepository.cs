@@ -109,6 +109,12 @@ namespace ArtistInfoTracksAPI.Repository
             await _context.SaveChangesAsync();
         }
 
+        public async Task RemoveAsync(int id)
+        {
+            var artist = await _context.Artists.FirstOrDefaultAsync(u => u.Id ==id);
+            _context.Remove(artist);
+        }
+
         public async Task SaveAsync()
         {
             try
@@ -123,21 +129,9 @@ namespace ArtistInfoTracksAPI.Repository
             }
         }
 
-        public async Task UpdateAsync(ArtistToUpdateDTO artist)
+        public async Task UpdateAsync(Artist artist)
         {
-            if (artist != null)
-            {
-                try
-                {
-                    _context.Update(artist);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbException dbEx)
-                {
-                    Console.WriteLine($"{dbEx.Message}");
-                }
-            }
-
+            _context.Update(artist);
         }
     }
 }

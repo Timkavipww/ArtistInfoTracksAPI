@@ -20,8 +20,8 @@ namespace ArtistInfoTracksAPI.Repository.IRepository
         Task CreateAsync(TrackToCreateDTO trackToCreateDTO);
 
         //Task RemoveAsync(int id);
-        Task RemoveAsync(Artist artist, int id);
-        Task UpdateAsync(TrackToUpdateDTO track);
+        Task RemoveAsync(int id);
+        Task UpdateAsync(Track track);
         Task SaveAsync();
     }
 }

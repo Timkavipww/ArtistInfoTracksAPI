@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Client;
+using System.Data.Common;
 using System.Diagnostics;
 using System.Net;
 using System.Text.Json;
@@ -22,169 +23,249 @@ namespace ArtistInfoTracksAPI.Endpoints
             app.MapGet("api/artist/{id}/track", GetAllTracksByArtistId).WithName("GetAllTracksByArtistId");
             app.MapGet("api/artist/{id}/track/{trackId}", GetTrackById).WithName("GetTrackById");
             app.MapGet("api/artist/{id}/track/name/{name}", GetTrackByName).WithName("GetTrackByName");
-            app.MapPost("api/artist/{id}/track", AddTrackToArtist).WithName("AddTrackByArtistId");
+            app.MapPost("api/artist/{id}/track", CreateTrack).WithName("AddTrackByArtistId");
             app.MapDelete("api/artist/{id}/track", DeleteTrackById).WithName("DeleteTrackById");
-            app.MapPut("api/artist/{id}/track", UpdateTrackById).WithName("UpdateTrackById");
+            app.MapPut("api/track", UpdateTrackById).WithName("UpdateTrackById");
             app.MapGet("api/track", GetAllTracks).WithName("GetAllTracks");
         }
-
+        //Get Track by ArtistId
         private static async Task<IResult> GetAllTracksByArtistId(int artistId, ITrackRepository _trackRepository, IArtistRepository _artistRepository)
         {
             var response = new APIResponse();
-            var artist = _artistRepository.GetAllAsync();
-            var exisartist = artist.Result.Where(u => u.Id == artistId).ToList();
 
-            var tracks = await _trackRepository.GetAllAsync(artistId);
-            if (exisartist.Count == 0)
+            try
             {
-                response.StatusCode = HttpStatusCode.NotFound;
-                response.Result = $"artist not found w id {artistId}";
-                return Results.NotFound(response);
+                var artist = _artistRepository.GetAllAsync();
+
+                var exisartist = artist.Result.Where(u => u.Id == artistId).ToList();
+
+                var tracks = await _trackRepository.GetAllAsync(artistId);
+                if (exisartist.Count == 0)
+                {
+                    response.NotFound();
+                    return Results.NotFound(response);
+                }
+                if (tracks != null)
+                {
+                    response.Success(tracks);
+                    return Results.Ok(response);
+                }
+                return Results.BadRequest(response);
             }
-            if (tracks != null)
+            catch (DbException dbEx)
             {
-                response.StatusCode = HttpStatusCode.OK;
-                response.isSuccess = true;
-                response.Result = tracks;
+                response.dbException(dbEx);
+                return Results.BadRequest(response);
+            }
+            catch (Exception ex)
+            {
+                response.fatalException(ex);
+                return Results.BadRequest(response);
+            }
+        }
+        //Create Track
+        private async static Task<IResult> CreateTrack([FromBody] TrackToCreateDTO trackFromBody, IArtistRepository _context)
+        {
+            var response = new APIResponse();
+
+            try
+            {
+                var artist = await _context.GetAsync(trackFromBody.ArtistId);
+
+                if (artist == null)
+                {
+                    response.NotFound();
+                    return Results.NotFound(response);
+                }
+
+                if (artist.Tracks.FirstOrDefault(t => t.Name == trackFromBody.Name) != null)
+                {
+                    response.Result = $"Track {trackFromBody.Name} already exists for this artist";
+                    return Results.BadRequest(response);
+                }
+
+                trackFromBody.fromTrackToCreateDTOtoEntity().UpdateFrom(trackFromBody);
+
+                artist.Tracks.Add(trackFromBody.fromTrackToCreateDTOtoEntity());
+                await _context.SaveAsync();
+
+                response.Created(trackFromBody);
+
                 return Results.Ok(response);
             }
-            return Results.BadRequest(response);
-
-
+            catch (DbException dbEx)
+            {
+                response.dbException(dbEx);
+                return Results.BadRequest(response);
+            }
+            catch (Exception ex)
+            {
+                response.fatalException(ex);
+                return Results.BadRequest(response);
+            }
+            
         }
-
-        private async static Task<IResult> AddTrackToArtist([FromBody] TrackToCreateDTO track, IArtistRepository _context)
+        //Delete Track by Id
+        private static async Task<IResult> DeleteTrackById(int trackId, ITrackRepository _context)
         {
             var response = new APIResponse();
 
-            var artist = await _context.GetAsync(track.ArtistId);
-
-            if (artist == null)
+            try
             {
-                response.Result = "Artist not found";
-                response.StatusCode = HttpStatusCode.NotFound;
-                return Results.NotFound(response);
+                var track = await _context.GetAsync(trackId);
+                if(track == null)
+                {
+                    response.NotFound();
+                    return Results.NotFound();
+                }
+                await _context.RemoveAsync(track.Id);
+                await _context.SaveAsync();
+                response.Success();
+                response.Result = $"deleted track {track.Name}";
+                return Results.Ok(response);
+
             }
-
-            var trackWithSameName = artist.Tracks.FirstOrDefault(t => t.Name == track.Name);
-            if (trackWithSameName != null)
+            catch (DbException dbEx)
             {
-                response.Result = $"Track {trackWithSameName.Name} already exists for this artist";
-                response.StatusCode = HttpStatusCode.BadRequest;
+                response.dbException(dbEx);
+                return Results.BadRequest(response);
+            }
+            catch (Exception ex)
+            {
+                response.fatalException(ex);
                 return Results.BadRequest(response);
             }
 
-            var newTrack = new Track {};
-            newTrack.Name = track.Name != "string" ? track.Name : newTrack.Name;
-            newTrack.ArtistId = track.ArtistId > 0 ? track.ArtistId : newTrack.ArtistId;
-            newTrack.Lyrics = track.Lyrics != "string" ? track.Lyrics : newTrack.Lyrics;
-            newTrack.AlbumName = track.AlbumName != "string" ? track.AlbumName : newTrack.AlbumName;
-            newTrack.Title = track.Title != "string" ? track.Title : newTrack.Title;
-
-            artist.Tracks.Add(newTrack);
-            await _context.SaveAsync();
-
-            response.Result = newTrack;
-            response.isSuccess = true;
-            response.StatusCode = HttpStatusCode.Created;
-
-            return Results.Ok(response);
         }
-
-        private static async Task<IResult> DeleteTrackById(int artistID, int trackId, IArtistRepository _context)
+        //Update Track by Id
+        private static async Task<IResult> UpdateTrackById([FromBody] TrackToUpdateDTO trackFromBody, ITrackRepository _context)
         {
             var response = new APIResponse();
 
-            var artist = await _context.GetAsync(artistID);
-            if(artist == null)
+            try
             {
-                response.StatusCode= HttpStatusCode.NotFound;
-                response.Result = "not found artist";
-                return Results.NotFound(response);
+                if (trackFromBody == null)
+                {
+                    response.StatusCode = HttpStatusCode.BadRequest;
+                    response.ErrorMessages.Add("Invalid track data.");
+                    return Results.BadRequest(response);
+                }
+
+                var track = await _context.GetAsync(trackFromBody.Id);  
+
+
+                if (track == null)
+                {
+                    response.StatusCode = HttpStatusCode.NotFound;
+                    response.ErrorMessages.Add($"Track with ID {trackFromBody.Id} not found.");
+                    return Results.NotFound(response);
+                }
+
+                track.Update(trackFromBody);
+
+                response.Success();
+                response.Result = $@"updated{trackFromBody.Name} ";
+                await _context.UpdateAsync(track);
+                await _context.SaveAsync();
+
+                return Results.Ok(response);
             }
-            var track = artist.Tracks.FirstOrDefault(u => u.Id == trackId);
-
-            artist.Tracks.RemoveAt(trackId);
-            response.Result = $"deleted track {track.Name}";
-            return Results.Ok(response);
-
-        }
-
-        private static async Task<IResult> UpdateTrackById(int artistId, int trackId, [FromBody] TrackToUpdateDTO trackFromBody, IArtistRepository _contextArtist, ITrackRepository _contextTrack)
-        {
-            var response = new APIResponse();
-
-            // Получаем артиста и проверяем на наличие
-            var artist = await _contextArtist.GetAsync(artistId);
-            if (artist == null)
+            catch (DbException dbEx)
             {
-                response.StatusCode = HttpStatusCode.NotFound;
-                return Results.NotFound(response);
-            }
-
-            // Проверяем входные данные
-            if (trackFromBody == null)
-            {
+                response.ErrorMessages.Add($"{dbEx.Message}");
                 return Results.BadRequest(response);
             }
-
-            // Обновляем трек
-            var track = await _contextTrack.GetAsync(trackId); // Предполагается, что у вас есть метод для получения трека
-            if (track == null)
+            catch (Exception ex)
             {
-                response.StatusCode = HttpStatusCode.NotFound;
-                return Results.NotFound(response);
+                response.ErrorMessages.Add($"{ex.Message}");
+                return Results.BadRequest(response);
             }
-
-            // Обновление полей с использованием тернарного оператора
-            track.AlbumName = trackFromBody.AlbumName != "string" ? trackFromBody.AlbumName : track.AlbumName;
-            track.Title = trackFromBody.Title != "string" ? trackFromBody.Title : track.Title;
-            track.Lyrics = trackFromBody.Lyrics != "string" ? trackFromBody.Lyrics : track.Lyrics;
-            track.Name = trackFromBody.Name != "string" ? trackFromBody.Name : track.Name;
-
-            // Сохраняем изменения
-            await _contextTrack.SaveAsync();
-
-            response.isSuccess = true;
-            response.StatusCode = HttpStatusCode.OK;
-            response.Result = $"Track updated: {track.Title} by artist {artist.Name}";
-
-            return Results.Ok(response);
         }
-
+        //Get Track by Id
         private async static Task<IResult> GetTrackById(int id, ITrackRepository _context)
         {
             var response = new APIResponse(){ };
-            if (id < 0)
+
+            try
             {
-                response.Result = "incorrect id";
-                response.StatusCode = HttpStatusCode.NotFound;
-                return Results.NotFound(response);
+                var track = await _context.GetAsync(id);
+
+                if (track == null)
+                {
+                    response.Result = "incorrect id";
+                    response.StatusCode = HttpStatusCode.NotFound;
+                    return Results.NotFound(response);
+                }
+
+                response.isSuccess = true;
+                response.StatusCode = HttpStatusCode.OK;
+                response.Result = track.toDTO();
+
+                return Results.Ok(response);
             }
-            var track = await _context.GetAsync(id);
-            response.Result = track;
-            return Results.Ok(response);
+            catch (DbException dbEx)
+            {
+                response.dbException(dbEx);
+                return Results.BadRequest(response);
+            }
+            catch (Exception ex)
+            {
+                response.fatalException(ex);
+                return Results.BadRequest(response);
+            }
+
         }
+        //Get Track by Name
         private async static Task<IResult> GetTrackByName(string name, ITrackRepository _context)
         {
-            var response = new APIResponse() { };
-            if (name == null)
-            {
-                response.Result = "not found";
-                response.StatusCode= HttpStatusCode.NotFound;
-                return Results.NotFound(response);
-            }
-            var track = await _context.GetAsync(name);
-            response.Result = track;
-            return Results.Ok(response);
-        }
+            var response = new APIResponse();
 
+            try
+            {
+                var track = await _context.GetAsync(name);
+                if (track == null)
+                {
+                    response.NotFound();
+                    return Results.NotFound(response);
+                }
+
+                response.Success();
+                response.Result = track.toDTO();
+                return Results.Ok(response);
+            }
+            catch (DbException dbEx)
+            {
+                response.dbException(dbEx);
+                return Results.BadRequest(response);
+            }
+            catch (Exception ex)
+            {
+                response.fatalException(ex);
+                return Results.BadRequest(response);
+            }
+            
+        }
+        //Get All Tracks
         private static async Task<IResult> GetAllTracks(ITrackRepository _context)
         {
             var response = new APIResponse() { };
 
-            response.Result = await _context.GetAllAsync();
-            return Results.Ok(response);
+            try
+            {
+                response.Result = await _context.GetAllAsync();
+                return Results.Ok(response);
+            }
+            catch (DbException dbEx)
+            {
+                response.dbException(dbEx);
+                return Results.BadRequest(response);
+            }
+            catch (Exception ex)
+            {
+                response.fatalException(ex);
+                return Results.BadRequest(response);
+            }
+
         }
     }
 }

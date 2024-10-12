@@ -2,6 +2,7 @@
 using ArtistInfoTracksAPI.ExtensionMapper;
 using ArtistInfoTracksAPI.Models.ArtistsModel;
 using ArtistInfoTracksAPI.Models.DTO;
+using ArtistInfoTracksAPI.Models.Interfaces;
 using ArtistInfoTracksAPI.Models.TrackModel;
 using ArtistInfoTracksAPI.Repository.IRepository;
 using Microsoft.EntityFrameworkCore;
@@ -23,137 +24,64 @@ namespace ArtistInfoTracksAPI.Repository
 
         public async Task AddTrackToArtist(int artistId, TrackToCreateDTO trackCreateDTO)
         {
-            var artist = await _context.Artists.FindAsync(artistId);
-            if (artist == null)
-            {
-                throw new Exception("Artist not found");
-            }
-
-            var newTrack = new Track
-            {
-                Name = trackCreateDTO.Name,
-                ArtistId = artist.Id
-            };
-
-            _context.Tracks.Add(newTrack);
-            await _context.SaveChangesAsync();
+            _context.Tracks.Add(trackCreateDTO.fromTrackToCreateDTOtoEntity());
         }
 
 
         public async Task CreateAsync(TrackToCreateDTO trackCreateDTO)
         {
-            try
-            {
-                var trackEntity = trackCreateDTO.fromTrackToCreateDTOtoEntity();
-                await _context.Tracks.AddAsync(trackEntity);
-                await _context.AddAsync(trackEntity);
-
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Ошибка при создании артиста: {ex.Message}", ex);
-            }
+            await _context.AddAsync(trackCreateDTO.fromTrackToCreateDTOtoEntity());
         }
 
         public async Task<ICollection<Track>> GetAllAsync(int artistId)
         {
-
-            var tracks = await _context.Tracks
+            return await _context.Tracks
             .Where(u => u.ArtistId == artistId)
             .ToListAsync();
-            try
-            {
-                return tracks;
-            }
-            catch (DbException dbEx)
-            {
-                Console.WriteLine($"Database error: {dbEx.Message}");
-                throw;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"General error: {ex.Message}");
-                throw;
-            }
         }
 
         public async Task<ICollection<Track>> GetAllAsync()
         {
-            try
-            {
-                return await _context.Tracks.AsNoTracking().ToListAsync(); 
-            }
-            catch (DbException dbEx)
-            {
-                Console.WriteLine($"data base excetpin{dbEx.Message}");
-                return null;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"general error");
-                return null;
-            }
+            return await _context.Tracks.AsNoTracking().ToListAsync(); 
         }
 
         public async Task<int> GetArtistId(Artist artist)
          {
             var result = await _context.Artists.FirstOrDefaultAsync(u => u.Id == artist.Id);
-            if (result != null)
-            {
-                return result.Id;
-            }
-            return 0;
+
+            return result.Id;
         }
 
         public async Task<Track> GetAsync(int id)
         {
-            
             return await _context.Tracks.FirstOrDefaultAsync(u => u.Id == id);
         }
 
         public async Task<Track> GetAsync(string name)
         {
-            return await _context.Tracks.FirstOrDefaultAsync(u =>u.Name == name);
+            return await _context.Tracks.FirstOrDefaultAsync(u => u.Name == name);
         }
 
         public async Task<List<Track>> GetTracksByArtistId(int artistId)
         {
-                var artist = await _context.Artists.Include(a => a.Tracks).FirstOrDefaultAsync(a => a.Id == artistId);
-                if (artist == null)
-                {
-                    throw new Exception("Artist not found");
-                }
-
+            var artist = await _context.Artists.Include(a => a.Tracks).FirstOrDefaultAsync(a => a.Id == artistId);
             return artist.Tracks;
-
         }
 
-        public async Task RemoveAsync(Artist artist, int id)
+        public async Task RemoveAsync(int id)
         {
-
-            if (artist == null)
-            {
-                Console.WriteLine($"artist is null");
-            }
-            var track = artist.Tracks.FirstOrDefault(artist => artist.Id == id);
-            _context.Remove(track);
-            await _context.SaveChangesAsync();
+            _context.Remove(await _context.Tracks.FirstOrDefaultAsync(u => u.Id == id));
         }
-    
 
         public async Task SaveAsync()
         {
             await _context.SaveChangesAsync();
         }
 
-        public async Task UpdateAsync(TrackToUpdateDTO track)
+        public async Task UpdateAsync(Track track)
         {
-            if(track == null)
-            {
-                return;
-            }
-            _context.Update(track);
-            await _context.SaveChangesAsync();
+
+            _context.Tracks.Update(track);
         }
     }
 }

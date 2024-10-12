@@ -3,10 +3,12 @@ using ArtistInfoTracksAPI.ExtensionMapper;
 using ArtistInfoTracksAPI.Models;
 using ArtistInfoTracksAPI.Models.ArtistsModel;
 using ArtistInfoTracksAPI.Models.DTO;
+using ArtistInfoTracksAPI.Models.TrackModel;
 using ArtistInfoTracksAPI.Repository.Interfaces;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using System.Data.Common;
 using System.Net;
 using System.Runtime.CompilerServices;
 
@@ -23,154 +25,194 @@ namespace ArtistInfoTracksAPI.Endpoints
             app.MapDelete("api/artist", RemoveAsyncArtist).WithName("Remove").Produces(400).Produces<APIResponse>(200);
             app.MapPut("api/artist", UpdateArtist).WithName("UpdateArtist").Produces(400).Produces<APIResponse>(200);
         }
-
-        private async static Task<IResult> GetAllArtists(IArtistRepository _context)
+        //Get all Artists
+        private static async Task<IResult> GetAllArtists(IArtistRepository _context)
         {
             var response = new APIResponse();
 
             try
             {
-
                 var artists = await _context.GetAllAsync();
-                response.Result = artists;
-                response.isSuccess = true;
-                response.StatusCode = HttpStatusCode.OK;
+                response.Success(artists);
 
                 return Results.Ok(response);
+            }
+            catch (DbException dbEx)
+            {
+                response.dbException(dbEx);
+                return Results.BadRequest(response);
             }
             catch (Exception ex)
             {
-
-                return Results.BadRequest(response.ErrorMessages.FirstOrDefault() + ex.Message);
+                response.fatalException(ex);
+                return Results.BadRequest(response);
             }
+        
         }
-
-        private async static Task<IResult> CreateArtist([FromBody] ArtistCreateDTO artistCreateDTO, IArtistRepository _context)
+        //Create Artist
+        private static async Task<IResult> CreateArtist([FromBody] ArtistCreateDTO artistCreateDTO, IArtistRepository _context)
         {
             var response = new APIResponse() { };
 
-            var artists = await _context.GetAllAsync();
-            var artistWithSameName = artists.FirstOrDefault(u => u.Name == artistCreateDTO.Name);
-            if (artistWithSameName != null)
+            try
             {
-                response.Result = $"{artistWithSameName.Name} already exists";
-                return Results.BadRequest(response);
-            }
-            if (artistCreateDTO != null)
-            {
+                var artists = await _context.GetAllAsync();
+                if (artists.FirstOrDefault(u => u.Name == artistCreateDTO.Name) != null)
+                {
+                    response.Result = $"{artistCreateDTO.Name} already exists";
+                    return Results.BadRequest(response);
+                }
+                if (artistCreateDTO != null)
+                {
+                    await _context.CreateAsync(artistCreateDTO);
+                    await _context.SaveAsync();
 
-                await _context.CreateAsync(artistCreateDTO);
-                await _context.SaveAsync();
-
-                response.Result = artistCreateDTO;
-                response.isSuccess = true;
-                response.StatusCode = HttpStatusCode.Created;
-
-                return Results.Ok(response);
-            } else
-            {
-                return Results.BadRequest(response);
-            }
-        }
-        private async static Task<IResult> GetArtistById(int id, IArtistRepository _context)
-        {
-            var response = new APIResponse();
-            var gotArtist = await _context.GetAsync(id);
-            if (gotArtist != null)
-            {
-                response.isSuccess = true;
-                response.StatusCode = HttpStatusCode.OK;
-                response.Result = gotArtist;
-
-
-                return Results.Ok(response);
-            }
-            else
-            {
-
-                return Results.BadRequest(response);
-            }
-
-        }
-        private async static Task<IResult> GetArtistByName(string name, IArtistRepository _context)
-        {
-            var response = new APIResponse();
-            var gotArtist = await _context.GetAsync(name);
-
-            if (gotArtist != null)
-            {
-                    response.isSuccess = true;
-                    response.StatusCode = HttpStatusCode.OK;
-                    response.Result = gotArtist;
+                    response.Created(artistCreateDTO);
 
                     return Results.Ok(response);
-                
+                }
+                else
+                {
+                    return Results.BadRequest(response);
+                }
             }
-            return Results.BadRequest(response);
-
+            catch (DbException dbEx)
+            {
+                response.dbException(dbEx);
+                return Results.BadRequest(response);
+            }
+            catch (Exception ex)
+            {
+                response.fatalException(ex);
+                return Results.BadRequest(response);
+            }
+            
         }
-
-        private async static Task<IResult> RemoveAsyncArtist(IArtistRepository _context, int id)
+        //Get Artist by Id
+        private static async Task<IResult> GetArtistById(int id, IArtistRepository _context)
         {
             var response = new APIResponse();
-                
-            var artist = await _context.GetAsync(id);
-            if (artist != null)
+            try
             {
-                await _context.RemoveAsync(artist);
-                await _context.SaveAsync();
-                response.Result = $"deleted {artist.Name}";
-                response.isSuccess = true;
-                response.StatusCode = HttpStatusCode.OK;
-                return Results.Ok(response);
-            } else
+                var gotArtist = await _context.GetAsync(id);
+                if (gotArtist != null)
+                {
+                    response.Success(gotArtist);
+
+                    return Results.Ok(response);
+                }
+                return Results.BadRequest(response);
+            }
+            catch (DbException dbEx)
             {
-                response.StatusCode = HttpStatusCode.NotFound;
+                response.dbException(dbEx);
+                return Results.BadRequest(response);
+            }
+            catch (Exception ex)
+            {
+                response.fatalException(ex);
                 return Results.BadRequest(response);
             }
         }
-
-        private async static Task<IResult> UpdateArtist(int id, [FromBody] ArtistToUpdateDTO artistToUpdateDTO, IArtistRepository _context)
+        //Get Artist by Name
+        private static async Task<IResult> GetArtistByName(string name, IArtistRepository _context)
         {
-            var response = new APIResponse() { };
-
-            var artist = await _context.GetAsync(id);
-
-
-           if(artist == null || artistToUpdateDTO == null || (artistToUpdateDTO.Name == "string" && artistToUpdateDTO.Description == "string"))
+            var response = new APIResponse();
+            try
             {
+                var gotArtist = await _context.GetAsync(name);
+
+                if (gotArtist != null)
+                {
+                    response.Success(gotArtist);
+
+                    return Results.Ok(response);
+                }
+                return Results.BadRequest(response);
+            }
+            catch (DbException dbEx)
+            {
+                response.dbException(dbEx);
+                return Results.BadRequest(response);
+            }
+            catch (Exception ex)
+            {
+                response.fatalException(ex);
+                return Results.BadRequest(response);
+            }
+        }
+        //Remove Artist by Id
+        private static async Task<IResult> RemoveAsyncArtist(IArtistRepository _context, int id)
+        {
+            var response = new APIResponse();
+            try
+            {
+                var artist = await _context.GetAsync(id);
+                if (artist != null)
+                {
+                    await _context.RemoveAsync(artist);
+                    await _context.SaveAsync();
+                    response.Success(artist);
+
+                    return Results.Ok(response);
+                }
+                response.NotFound();
+                return Results.NotFound(response);
+            }
+            catch (DbException dbEx)
+            {
+                response.dbException(dbEx);
+                return Results.BadRequest(response);
+            }
+            catch (Exception ex)
+            {
+                response.fatalException(ex);
+                return Results.BadRequest(response);
+            }
+            
+        }
+        //Update Artist
+        private async static Task<IResult> UpdateArtist([FromBody] ArtistToUpdateDTO artistFromBody, IArtistRepository _context)
+        {
+            var response = new APIResponse();
+
+            try
+            {
+                if (artistFromBody == null)
+                {
+                    response.ErrorMessages.Add("Artist data is required.");
+                    return Results.BadRequest(response);
+                }
+
+                var artist = await _context.GetAsync(artistFromBody.Id);
+
+                if (artist == null)
+                {
+                    response.NotFound();
+                    return Results.NotFound(response);
+                }
+
+                artist.Update(artistFromBody);
+
+                response.Success();
+                response.Result = $"Updated artist {artist.Name}.";
+
+                await _context.UpdateAsync(artist);
+                await _context.SaveAsync();
+
+                return Results.Ok(response);
+            }
+            catch (DbException dbEx)
+            {
+                response.ErrorMessages.Add($"Database error: {dbEx.Message}");
+                return Results.BadRequest(response);
+            }
+            catch (Exception ex)
+            {
+                response.ErrorMessages.Add($"Unexpected error: {ex.Message}");
                 return Results.BadRequest(response);
             }
 
-            if (artistToUpdateDTO.Name == "string")
-            {
-                response.Result = $"new description is {artistToUpdateDTO.Description}";
-                response.isSuccess = true;
-                response.StatusCode = HttpStatusCode.OK;
-                artist.Description = artistToUpdateDTO.Description;
-                await _context.SaveAsync();
-                return Results.Ok(response);
-            }
-
-            if (artistToUpdateDTO.Description == "string")
-            {
-                response.Result = $"new name is {artistToUpdateDTO.Name}";
-                response.isSuccess = true;
-                response.StatusCode = HttpStatusCode.OK;
-                artist.Name = artistToUpdateDTO.Name;
-                await _context.SaveAsync();
-                return Results.Ok(response);
-            }
-
-            if (!(artistToUpdateDTO.Name == "string" && artistToUpdateDTO.Description == "string"))
-            {
-                artist.Name = artistToUpdateDTO.Name;
-                artist.Description = artistToUpdateDTO.Description;
-                await _context.SaveAsync();
-                return Results.Ok(response);
-            }
-            return Results.BadRequest(response);
-            
         }
     }
 }

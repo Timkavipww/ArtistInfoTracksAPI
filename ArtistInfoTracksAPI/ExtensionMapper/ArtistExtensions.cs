@@ -1,9 +1,11 @@
 ﻿using ArtistInfoTracksAPI.Models.ArtistsModel;
 using ArtistInfoTracksAPI.Models.DTO;
+using ArtistInfoTracksAPI.Models.TrackModel;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Protocols;
+using System.Reflection;
 
 namespace ArtistInfoTracksAPI.ExtensionMapper
 {
@@ -59,7 +61,6 @@ namespace ArtistInfoTracksAPI.ExtensionMapper
         {
             var artistToUpdate = new Artist()
             {
-                
                 Name = artistToUpdateDTO.Name,
                 Description = artistToUpdateDTO.Description,
 
@@ -74,6 +75,26 @@ namespace ArtistInfoTracksAPI.ExtensionMapper
                 Description = artist.Description,
             };
             return artistToUpdate;
+        }
+        public static void Update(this Artist artist, ArtistToUpdateDTO artistFromBody)
+        {
+            if (artistFromBody == null) return;
+
+            var artistProperties = typeof(Artist).GetProperties(BindingFlags.Public | BindingFlags.Instance);
+            var dtoProperties = typeof(ArtistToUpdateDTO).GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+            foreach (var dtoProp in dtoProperties)
+            {
+                var value = dtoProp.GetValue(artistFromBody);
+                if (value is not null)
+                {
+                    var artistProp = artistProperties.FirstOrDefault(p => p.Name == dtoProp.Name);
+                    if (artistProp != null && artistProp.CanWrite)
+                    {
+                        artistProp.SetValue(artist, value);
+                    }
+                }
+            }
         }
 
     }
